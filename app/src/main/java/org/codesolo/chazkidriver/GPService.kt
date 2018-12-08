@@ -121,8 +121,11 @@ class GPService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleApiClien
 
             Log.i(TAG, "location updated at : $mLastUpdateTime [$path]")
 
-            AppSession.latitude = location.latitude
-            AppSession.longitude = location.longitude
+//            AppSession.latitude = location.latitude
+//            AppSession.longitude = location.longitude
+
+//            update location in FireStore
+            AppSession.updateLocation(location.latitude, location.longitude)
 
 
         } catch (e: IOException) {

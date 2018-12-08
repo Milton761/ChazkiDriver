@@ -63,8 +63,8 @@ class MapsActivity : AppCompatActivity(),
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        lat = AppSession.latitude
-        lon = AppSession.longitude
+//        lat = AppSession.latitude
+//        lon = AppSession.longitude
 
         Log.i(TAG, "onCreate")
 
