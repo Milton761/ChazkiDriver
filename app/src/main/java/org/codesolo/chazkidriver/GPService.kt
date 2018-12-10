@@ -1,24 +1,20 @@
 package org.codesolo.chazkidriver
 
 
-import android.*
 import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.IBinder
-import android.support.v4.app.ActivityCompat
 import android.util.Log
 
 //import com.firebase.geofire.GeoFire
 //import com.firebase.geofire.GeoLocation
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.common.server.converter.StringToIntConverter
 import com.google.android.gms.location.LocationListener
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -133,7 +129,7 @@ class GPService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleApiClien
 //            AppSession.longitude = location.longitude
 
 //            update location in FireStore
-            AppSession.updateLocation(location.latitude, location.longitude)
+            AppSession.updateLocation(location.latitude, location.longitude, location.bearing)
 
 
         } catch (e: IOException) {

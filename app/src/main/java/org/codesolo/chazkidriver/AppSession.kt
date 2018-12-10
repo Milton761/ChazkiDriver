@@ -1,7 +1,5 @@
 package org.codesolo.chazkidriver
 
-import android.content.SharedPreferences
-import android.database.Observable
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -18,11 +16,12 @@ object AppSession {
 
 
 
-    fun updateLocation(lat:Double, lon:Double) {
+    fun updateLocation(lat: Double, lon: Double, rotation: Float) {
 
         var currentLoc: HashMap<String,Any> = hashMapOf()
         currentLoc["latitude"] = lat
         currentLoc["longitude"] = lon
+        currentLoc["rotation"] = rotation
 
         fs.collection("locDriver").document(userCode).set(currentLoc).addOnCompleteListener {
             if (it.isSuccessful) {
