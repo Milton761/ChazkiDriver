@@ -39,6 +39,7 @@ import java.util.Locale
 
 class GPService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
     LocationListener {
+
     private var mGoogleClient: GoogleApiClient? = null
     private var mLocationRequest: LocationRequest? = null
     private var mLastUpdateTime: String? = null
@@ -50,6 +51,13 @@ class GPService : Service(), GoogleApiClient.ConnectionCallbacks, GoogleApiClien
         super.onCreate()
 
         buildGoogleApiClient()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AppSession.hideLocation()
+        mGoogleClient!!.disconnect()
+        this.stopSelf()
     }
 
     override fun onBind(intent: Intent): IBinder? {

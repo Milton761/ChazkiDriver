@@ -1,6 +1,8 @@
 package org.codesolo.chazkidriver
 
 import android.annotation.SuppressLint
+import android.app.Dialog
+import android.content.DialogInterface
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 
@@ -12,11 +14,25 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import android.content.Intent
 import android.location.Location
+import android.support.v7.app.AlertDialog
+import android.support.v7.widget.Toolbar
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.messaging.FirebaseMessaging
+import com.karumi.dexter.Dexter
+import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionDeniedResponse
+import com.karumi.dexter.listener.PermissionGrantedResponse
+import com.karumi.dexter.listener.PermissionRequest
+import com.karumi.dexter.listener.single.PermissionListener
+import kotlinx.android.synthetic.main.activity_maps.*
+import kotlinx.android.synthetic.main.activity_maps_permission.*
 
 
 class MapsActivity : AppCompatActivity(),
@@ -24,6 +40,120 @@ class MapsActivity : AppCompatActivity(),
     GoogleApiClient.ConnectionCallbacks,
     GoogleApiClient.OnConnectionFailedListener,
     GoogleMap.OnMapLoadedCallback {
+
+
+
+
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var myMap: GoogleMap
+
+
+    private  var tag = this.javaClass.name.toString()
+
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.mainmenu, menu)
+        return true
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+
+        FirebaseMessaging.getInstance().isAutoInitEnabled = true;
+        validatePermission()
+
+
+
+
+    }
+
+
+
+    @SuppressLint("MissingPermission")
+    override fun onMapReady(googleMap: GoogleMap) {
+
+        myMap = googleMap
+        Log.i(tag, "onMapReady")
+        setMarkerLocation(myMap)
+
+    }
+
+    @SuppressLint("MissingPermission")
+    fun setMarkerLocation(googleMap: GoogleMap){
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location : Location? ->
+                // Got last known location. In some rare situations this can be null.
+                val currentLocation  = LatLng(location!!.latitude, location!!.longitude)
+                googleMap.addMarker(MarkerOptions().position(currentLocation).title("You r Here"))
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 16.0f))
+
+            }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.mainActionSetting -> {
+
+            startActivity(Intent(this, ConfigurationActivity::class.java))
+
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
+    }
+
+
+    private fun validatePermission() {
+        Dexter.withActivity(this)
+            .withPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+            .withListener(object : PermissionListener {
+                override fun onPermissionGranted(response: PermissionGrantedResponse?) {
+
+                    Toast.makeText(this@MapsActivity, "Permission Granted", Toast.LENGTH_LONG).show()
+
+                    setContentView(R.layout.activity_maps)
+
+                    val mapFragment = supportFragmentManager
+                        .findFragmentById(R.id.map) as SupportMapFragment
+                    mapFragment.getMapAsync(this@MapsActivity)
+                    setSupportActionBar(toolbar)
+                    toolbar.title = AppSession.userName
+
+//        startService(Intent(this, GPService::class.java))
+
+                    fusedLocationClient = LocationServices.getFusedLocationProviderClient(this@MapsActivity)
+                }
+
+                override fun onPermissionRationaleShouldBeShown(permission: PermissionRequest?, token: PermissionToken?) {
+                    AlertDialog.Builder(this@MapsActivity)
+                        .setTitle("Permissions")
+                        .setMessage("This app need use gps to get your current location")
+                        .setCancelable(false)
+                        .setNegativeButton(android.R.string.cancel) { dialogInterface, i ->
+                            dialogInterface.dismiss()
+                            token?.cancelPermissionRequest()
+                        }
+                        .setPositiveButton(android.R.string.ok) { dialogInterface, i ->
+                            dialogInterface.dismiss()
+                            token?.continuePermissionRequest()
+                        }
+                        .show()
+                }
+
+                override fun onPermissionDenied(response: PermissionDeniedResponse?) {
+                    Toast.makeText(this@MapsActivity, "Denied Permisionn", Toast.LENGTH_LONG).show()
+//                    var dialog = Dialog(this@MapsActivity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+
+                    this@MapsActivity.setContentView(R.layout.activity_maps_permission)
+
+                    button.setOnClickListener {
+                        validatePermission()
+                    }
+
+//                    dialog.show()
+                }
+            }
+            ).check()
+    }
 
     override fun onConnectionSuspended(p0: Int) {
 
@@ -42,69 +172,4 @@ class MapsActivity : AppCompatActivity(),
 
     }
 
-
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-
-    var lat:Double? = null
-    var lon:Double? = null
-
-    private  var TAG = this.javaClass.name.toString()
-
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_maps)
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
-        val intent = Intent(this, GPService::class.java)
-        startService(intent)
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-//        lat = AppSession.latitude
-//        lon = AppSession.longitude
-
-        Log.i(TAG, "onCreate")
-
-//        if (mGoogleApiClient == null) {
-//            mGoogleApiClient = GoogleApiClient.Builder(applicationContext)
-//                .addConnectionCallbacks(this)
-//                .addOnConnectionFailedListener(this)
-//                .addApi(API)
-//                .build()
-//            Log.i("MAP ACTIVITY", "GoogleApiClient")
-//        }
-
-
-
-    }
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    @SuppressLint("MissingPermission")
-    override fun onMapReady(googleMap: GoogleMap) {
-
-        Log.i(TAG, "onMapReady")
-
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location : Location? ->
-                // Got last known location. In some rare situations this can be null.
-                val currentLocation  = LatLng(location!!.latitude, location!!.longitude)
-                googleMap.addMarker(MarkerOptions().position(currentLocation).title("You r Here"))
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 16.0f))
-            }
-
-//        val currentLocation  = LatLng(AppSession.latitude, AppSession.longitude)
-//        googleMap.addMarker(MarkerOptions().position(currentLocation).title("You r Here"))
-//        googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation))
-    }
 }
